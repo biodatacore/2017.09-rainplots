@@ -1,7 +1,7 @@
 ---
 title: "Rainplots Tutorial"
 author: "Mir Henglin"
-date: "null"
+date: "June 25, 2019"
 output:
   html_document: default
   pdf_document: default
@@ -11,71 +11,15 @@ output:
 knitr::opts_chunk$set(echo = TRUE, fig.height = 10, fig.width = 10, fig.align = "center")
 ```
 
-To construct rainplots in R, we will be using the `ggplot2` package. To perform data manipulation, we will be using the `dplyr` package.
-
-```{r library, warning=FALSE, message=FALSE}
-library(dplyr)
-library(ggplot2)
-
+```{r data_intro, child = 'tdi4.Rmd'}
 ```
 
-```{r import, include=FALSE, message=FALSE, warning=FALSE}
-
-set.seed(12345)
-
-plot_data <-
-  readRDS('data/plotdat.rds') 
-
-plot_data <- 
-  plot_data %>%
-  select(response, term, estimate, p.value) %>%
-  mutate(estimate = round(estimate, 1)) 
-
-ranks <-
-  plot_data %>% 
-  group_by(term) %>% 
-  summarise(mpv = median(p.value)) %>% 
-  arrange(mpv) %>% 
-  mutate(rank = 1:n()) %>% 
-  select(-mpv)
-
-plot_data <-
-  plot_data %>% 
-  left_join(ranks)
-
-plot_data <- plot_data %>% filter(rank %in% seq(1, 121, 6))
-
-
+```{r nl10pv, child = 'nl10pv.Rmd'}
 ```
 
-## Data Format
+## Plotting
 
-Rainplots are useful for summarizing the results of multiple models at the same time. In order to plot those results in `ggplot2`, those results must formatted properly. Specifically, the data must be organized in a `data.frame` with columns indicating
-
-* The model that the results came from
-* The term that was evaluated
-* The P-value
-* The regression estimate
-
-An example of data organized in this way can be seen below.
-
-```{r}
-plot_data
-```
-
-In this dataset, `estimate` and `p.value` indicate the regression estimate and the p.value of that estimate. `term` indicates the ID of the metabolite included in the model. `response` indicates which model that a term corresponds to. For example if `response` = Body Mass Index, this indicates that the regression estimate and the p.value correspond to the model where Body Mass Index was the response variable.
-
-##Plotting
-
-Before plotting, we will first transform `p.value` onto the negative log-scale. This allows smaller P-values, which are often of greater interest, to appear larger when plotted.
-
-```{r}
-plot_data <- 
-  plot_data %>% 
-  mutate(p.value = -1 * log10(p.value))
-```
-
-We can then construct a basic rainplot.
+A basic rainplot can be constructed in only two lines of `ggplot2` code!
 
 ```{r}
 
