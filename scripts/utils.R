@@ -1,27 +1,15 @@
-import_plotdat <- function() {
-    readRDS('data/plotdat.rds')
-}
-
-import_top50_plotdat <- function() {
-    readRDS('data/top50_plotdat.rds')
-}
-
-import_top25_plotdat <- function() {
-    readRDS('data/top25_plotdat.rds')
-}
-
-var_substitute <- function(var) {
-    case_when(
-        var == 'AGE8' ~ 'Age',
-        var == 'BMI8' ~ 'Body Mass Index',
-        var == 'curr_diab8' ~ 'Prevalent Diabetes',
-        var == 'points' ~ 'Framingham Risk Score',
-        var == 'sex' ~ 'Female Sex',
-        var == 'MetS' ~ 'Metabolic Syndrome',
-        var == 'curr_diab9' ~ 'Incident Diabetes',
-        var == 'cvd' ~ 'Incident CVD',
-        var == 'gluco8' ~ 'Fasting Glucose',
-        TRUE ~ var
-    )
-}
-
+# Diverging Red Blue Palette
+drb_palette <-
+    c("#053061",
+      "#313695",
+      "#4575b4",
+      "#74add1",
+      "#abd9e9",
+      "#e0f3f8",
+      # "#ffffbf",
+      "#fee090",
+      "#fdae61",
+      "#f46d43",
+      "#d73027",
+      "#a50026",
+      '#67001f')
