@@ -1,84 +1,69 @@
 # Library -----------------------------------------------------------------
 library(magrittr)
 library(dplyr)
-library(ggplot2)
 library(stringr)
 library(purrr)
-source('scripts/utils.R')
 # Import ------------------------------------------------------------------
-dat <-
+model_results <-
     readr::read_tsv('data/all_models_linear_output.tsv')
 
 
-# Transform Response and Control ------------------------------------------------------
 
-dat %<>%
-    mutate(response = var_substitute(response))
+# Only Metabolite Terms ---------------------------------------------------
 
-dat$control %<>%
-    str_split(', ') %>%
-    map(var_substitute) %>%
-    map_chr(str_c, collapse = ', ')
-
-
-
-# Cap pvalue --------------------------------------------------------------
-dat %<>%
-    mutate(neg_log10_pvalue_15cap = ifelse(neg_log10_pvalue >= 15, 15, neg_log10_pvalue)) %>%
-    mutate(neg_log10_pvalue = round(neg_log10_pvalue, 2))
-
-
-# Filtering ---------------------------------------------------------------
-dat %<>%
+model_results %<>%
     filter(grepl('^mzid', term))
 
-top_mzid <-
-    dat %>%
-    group_by(term) %>%
-    summarise(mn = mean(neg_log10_pvalue_15cap)) %>%
-    arrange(desc(mn)) %>%
-    # slice(1:50) %>%
-    pull(term)
 
-top50_dat <-
-    dat %>%
-    filter(term %in% top_mzid[1:50])
+# Full Variable Names -----------------------------------------------------
 
-top25_dat <-
-    dat %>%
-    filter(term %in% top_mzid[1:25])
-
-# Modify labels -----------------------------------------------------------
-viz_prep <- function(dat) {
-    dat %<>%
-        mutate(mzid = purrr::map_chr(stringr::str_split(control, ', '), 1),
-               mz = as.numeric(stringr::str_extract(mzid, '[0-9]{3}\\.[0-9]{6}')),
-               rt = as.numeric(stringr::str_extract(mzid, '[0-9]{1}\\.[0-9]{4}$'))) %>%
-        mutate(control = gsub('\\_[0-9]*\\.[0-9]*\\_[0-9]*\\.[0-9]*', '', control)) %>%
-        mutate(control = gsub(', ', ' + ', control)) %>%
-        mutate(model_specification = paste(response, '~', control),
-               size_label = paste("p =", neg_log10_pvalue),
-               colour_label = paste("e =", round(estimate, 2)))
-
-
-    # Label Ordering ----------------------------------------------------------
-    model_levels <-
-        dat %>%
-        arrange(model_name) %>%
-        distinct(response, model_specification)
-
-    dat %<>%
-        mutate(term = factor(term, levels = rev(top_mzid)),
-               model_specification = factor(model_specification, levels = model_levels$model_specification),
-               response = factor(response, levels = model_levels$response))
-
-    return(dat)
+full_name <- function(var) {
+    case_when(
+        var == 'AGE8' ~ 'Age',
+        var == 'BMI8' ~ 'Body Mass Index',
+        var == 'curr_diab8' ~ 'Prevalent Diabetes',
+        var == 'points' ~ 'Framingham Risk Score',
+        var == 'sex' ~ 'Female Sex',
+        var == 'MetS' ~ 'Metabolic Syndrome',
+        var == 'curr_diab9' ~ 'Incident Diabetes',
+        var == 'cvd' ~ 'Incident CVD',
+        var == 'gluco8' ~ 'Fasting Glucose',
+        TRUE ~ var
+    )
 }
 
-dat %<>% viz_prep()
-top50_dat %<>% viz_prep()
-top25_dat %<>% viz_prep()
+model_results %<>%
+    mutate(response = full_name(response))
 
-saveRDS(dat, 'data/plotdat.rds')
-saveRDS(top50_dat, 'data/top50_plotdat.rds')
-saveRDS(top25_dat, 'data/top25_plotdat.rds')
+model_results$control %<>%
+    str_split(', ') %>%
+    map(full_name) %>%
+    map_chr(str_c, collapse = ' + ')
+
+
+# P-value Ranking ---------------------------------------------------------
+
+mzid_rank <-
+    model_results %>%
+    group_by(term) %>%
+    summarise(mn = median(p.value)) %>%
+    arrange(mn) %>%
+    mutate(rank = 1:n())
+
+model_results %<>%
+    select(-rank) %>%
+    left_join(mzid_rank)
+
+saveRDS(model_results, 'data/plot_data.rds')
+
+
+# Tutorial Data -----------------------------------------------------------
+
+model_results <- model_results %>% filter(rank %in% seq(1, 121, 6))
+
+model_results <-
+    model_results %>%
+    select(response, term, estimate, p.value) %>%
+    mutate(estimate = round(estimate, 1))
+
+saveRDS(model_results, 'data/tutorial_plot_data.rds')
