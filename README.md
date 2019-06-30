@@ -1,1 +1,6 @@
-# Code accompaniment to “A Single Visualization Technique for Displaying Multiple Metabolite-Phenotype Associations” by Mir Henglin et al. 2017.
+# Rain Plots
+
+*** Visualizing results of multiple association analyses ***
+
+Hi! This repository is an ongoing development and current work in progress. A tutorial for creating rainplots can be found in the `tutorials` folder. PDF and HTML versions are currently availible.
+
