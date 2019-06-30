@@ -3,8 +3,8 @@ title: "Rainplots Tutorial"
 author: "Mir Henglin"
 date: "June 25, 2019"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -24,9 +24,8 @@ A basic rainplot can be constructed in only two lines of `ggplot2` code!
 ```{r}
 
 rainplot <-
-  plot_data %>%
-  ggplot(aes(x = response, y = term)) +
-  geom_point(aes(colour = estimate, size = p.value)) 
+  ggplot(plot_data) +
+  geom_point(aes(x = response, y = term, colour = estimate, size = p.value)) 
 
 rainplot
 ```
@@ -124,9 +123,9 @@ The points on rainplots can be outlined in a color different from the color of t
 ```{r}
 
 rainplot <-
-  plot_data %>%
-  ggplot(aes(x = response, y = term)) +
-  geom_point(aes(fill = estimate, size = p.value), shape = 21) + 
+  ggplot(plot_data) +
+  geom_point(aes(x = response, y = term, fill = estimate, size = p.value), 
+             shape = 21) + 
   scale_fill_gradientn(
     'Regression Estimate',
     colors = palette,
@@ -152,9 +151,8 @@ plot_data_thresholded <-
   mutate(p.value = ifelse(p.value > 15, 15, p.value))
 
 rainplot <-
-  plot_data_thresholded %>%
-  ggplot(aes(x = response, y = term)) +
-  geom_point(aes(colour = estimate, size = p.value)) +
+  ggplot(plot_data_thresholded) +
+  geom_point(aes(x = response, y = term, colour = estimate, size = p.value)) +
   scale_color_gradientn(
     'Regression Estimate',
     colors = palette,
@@ -193,9 +191,8 @@ plot_data <-
 
 ```{r}
 rainplot <-
-  plot_data %>%
-  ggplot(aes(x = response, y = term)) +
-  geom_point(aes(colour = estimate, size = p.value)) +
+  ggplot(plot_data) +
+  geom_point(aes(x = response, y = term, colour = estimate, size = p.value)) +
   scale_color_gradientn(
     'Regression Estimate',
     colors = palette,
@@ -256,9 +253,8 @@ plot_data <-
 
 ```{r}
 rainplot <-
-  plot_data %>%
-  ggplot(aes(x = response, y = term)) +
-  geom_point(aes(colour = estimate, size = p.value)) +
+  ggplot(plot_data) +
+  geom_point(aes(x = response, y = term, colour = estimate, size = p.value)) +
   scale_color_gradientn(
     'Regression Estimate',
     colors = palette,
@@ -405,7 +401,7 @@ dendro <-
 grid.arrange(dendro, rainplot, ncol = 2, widths = c(3, 15)) 
 ```
 
-When we add the dendrogram, we see that it is perfectly aligned to the rainplot labels. However, some of the dendrogram is outside the plotted area to the left. Additionally, there is too much white space to the right of the plot. Both those issues can be rectified through the `expand` argument. Note that the first non-zero argument to `expand` will depend on the size of the dendrogram, and will take some trial and error to discover. The second non-zero argument determines how close the right plot edge is to the bottom of the dendrogram, and is mostly a design preference.
+When we add the dendrogram, we see that it is perfectly aligned to the rainplot labels. However, some of the dendrogram is outside the plotted area to the left. Additionally, there is too much white space to the right of the plot. Both those issues can be rectified through the `expand` argument. The first non-zero argument to `expand` controls the space to the left of the plot, and needs to be large enough so that the whole dendrogram is visible. The best value may take some trial and error to discover. The second non-zero argument determines how close the right plot edge is to the bottom of the dendrogram. I have found 0.1 to be a good default, but it can be larger if more space between the dendrogram and rainplot is desired..
 
 ```{r}
 
