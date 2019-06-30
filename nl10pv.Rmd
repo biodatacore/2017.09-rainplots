@@ -2,11 +2,13 @@
 title: "nl10pv"
 author: "Mir Henglin"
 date: "6/25/2019"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 
-Before plotting, we will first transform `p.value` onto the negative log-scale. This allows smaller P-values, which are often of greater interest, to have larger values than P-values that might be of lesser interest.
+Before plotting, we will first transform `p.value` onto the negative-log-scale. This will allow the smallest P-values, which are often of greater interest, to have the largest values when plotted. 
 
 ```{r}
 plot_data <- 

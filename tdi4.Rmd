@@ -19,17 +19,25 @@ plot_data <-
 
 ## Data Format
 
-Rainplots are useful for summarizing the results of multiple models at the same time. In order to plot those results in `ggplot2`, those results must formatted properly. Specifically, the data must be organized in a `data.frame` with columns indicating:
+The plots we will make will summarize the results of multiple models at the same time. In order to plot those results in `ggplot2`, they must be properly formatted. Specifically, the data must be organized in a `data.frame` with columns indicating:
 
-* The model that the results came from
-* The term that was evaluated
+* The model that the results correspond to
+* The dependent variable term
 * The P-value
 * The regression estimate
 
-An example of data organized in this way can be seen below. Other columns can be included in the data, but for the purpose of this tutorial we are focusing on the four necessary columns.
+Other columns can be included in the data, but for the purpose of this tutorial we will focus on the four necessary columns. 
+
+### Tutorial Dataset
+
+The dataset we will be using contains regression coefficents and P-values for models evaluating the relationship between the measured levels of metabolites found in the blood and biological measures of interest. A small portion of that dataset is shown below.
 
 ```{r}
 plot_data
 ```
 
-In this dataset, `estimate` and `p.value` indicate the regression estimate and the p.value of that estimate. `term` indicates the ID of the metabolite included in the model. `response` indicates which model that a term corresponds to. For example if `response` = Body Mass Index, this indicates that the regression estimate and the p.value correspond to the model where Body Mass Index was the response variable.
+In this dataset, `estimate` and `p.value` indicate the regression estimate and the P-value of that estimate, `term` indicates the ID of the metabolite, and`response` indicates the biological measure of interest. For example, if `response` = Body Mass Index and `term` = mzid_396.271758_6.3118, that row in the dataset corresponds to the model;
+
+$$Body Mass Index = \beta_0 + \beta_1 * mzid\_396.271758\_6.3118 + X\beta + \epsilon$$
+
+Where $X\beta$ corresponds to other control variables included in the model and $\epsilon \sim \mathcal{N}(0, \sigma^2)$. `estimate` is the estimated value of $\beta_1$ and `p.value` is the corresponding P-value.
