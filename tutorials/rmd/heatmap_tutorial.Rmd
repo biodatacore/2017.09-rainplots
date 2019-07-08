@@ -1,10 +1,10 @@
 ---
-title: "heatmaps Tutorial"
+title: "Heatmaps Tutorial"
 author: "Mir Henglin"
 date: "June 25, 2019"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -66,7 +66,7 @@ heatmap
 
 ```
 
-We can improve the color perception by using  a 'viridis' colour palette.
+We can further improve the plot by using a 'viridis' colour palette.
 
 ```{r}
 
@@ -86,6 +86,7 @@ In addition to displaying information about P-values, a heatmap can be used to d
 ```{r}
 
 palette <-
+  # Blue
   c("#053061",
     "#313695",
     "#4575b4",
@@ -98,6 +99,7 @@ palette <-
     "#d73027",
     "#a50026",
     '#67001f')
+# Red
 
 # Calculate symetiric limits based on most extreme value
 max_abs_estimate <- max(abs(plot_data$estimate))
@@ -135,7 +137,7 @@ plot_data_thresholded <-
   plot_data %>% 
   mutate(p.value = ifelse(p.value > 15, 15, p.value))
 
-heatmap <-
+heatmap_thresh <-
   # Use the thresholded data
   ggplot(plot_data_thresholded) +
   geom_tile(aes(x = response, y = term, fill = p.value)) + 
@@ -149,20 +151,25 @@ heatmap <-
   thm
 
 
-heatmap
+heatmap_thresh
 ```
 
 ### Ordering by P-Value
 
-To make it easier to identify the metabolites that had small P-values in multiple models, we will convert the `term` column into a factor variable ordered by the average P-value across all models. This will put metabolites with small P-values in multiples models at the top of the plot, and metabolites with large P-values in multiple models at the bottom of the plot. Once the `term` column has been converted, both P-value and effect estimate heatmaps will have the same order.
+To make it easier to identify the metabolites that had small P-values in multiple models, we will convert the `term` column into an 'ordered factor' ordered by the average P-value across all models. This will put metabolites with small P-values in multiples models at the top of the plot, and metabolites with large P-values in multiple models at the bottom of the plot. Once the `term` column has been converted, both P-value and effect estimate heatmaps will have the same order.
 
 ```{r}
-# Order metabolites by average p-value
-term_order <-
+
+# Calculate mean P-value for each metabolite
+mpv <-
   plot_data %>% 
   group_by(term) %>% 
-  summarise(mpv = mean(p.value)) %>% 
-  arrange(mpv) %>% 
+  summarise(mean_pv = mean(p.value))
+
+# Order metabolites by average p-value
+term_order <-
+  mpv %>% 
+  arrange(mean_pv) %>% 
   pull(term)
 
 # Convert term to a factor, ordered by `term_order`
@@ -373,70 +380,15 @@ dendro <-
 grid.arrange(dendro, es_heatmap_clo, ncol = 2, widths = c(3, 15)) 
 ```
 
-To better understand how this works, lets walk through it step by step. To make what is going on clearer, many layout elements will initially be left visible. We start by creating the empty plot with the same layout and scale as the heatmap.
-
-```{r}
-dendro <-
-  # empty ggplot with same x and y axis
-  ggplot() +
-  geom_blank(aes(x = response, y = term), data = longest_x_label_data) + 
-  scale_x_discrete(position = 'top') +
-  # Match heatmap layoutt
-  thm +
-  # Remove unneeded text
-  theme(axis.text.y = element_blank())
-
-grid.arrange(dendro, es_heatmap_clo, ncol = 2, widths = c(3, 15)) 
-```
-
-Having matched the plot layout, the dendrogram will now align with the heatmap.
-
-```{r}
-
-max_dendro <-
-  max(abs(c(dendro_dat$y, dendro_dat$yend)))
-
-offset <- max_dendro + 1
-
-dendro <-
-  dendro + 
-  geom_segment(aes(x = -y+offset, y = x, xend=-yend+offset, yend=xend),
-               colour = 'black', 
-               data = dendro_dat)
-
-grid.arrange(dendro, es_heatmap_clo, ncol = 2, widths = c(3, 15)) 
-```
-
-When we add the dendrogram, we see that it is perfectly aligned to the heatmap labels. However, some of the dendrogram is outside the plotted area to the left. This issue can be rectified through the `expand` argument. The second argument to `expand` controls the space to the left of the plot, and needs to be large enough so that the whole dendrogram is visible. For dendrograms of default thickness, 0.02 is a near-perfect default. For dendrograms with thicker lines, the argument will need to be larger so that the whole dendrogram is plotted. (# Note the offset value calculated above corrects a situation where otherwise the best values to pass to `expand` require a lot of trial and error.)
-
-```{r}
-
-dendro <-
-  dendro +
-  scale_x_discrete(position = 'top', expand = c(0, 0.02, 0, 0)) 
-
-grid.arrange(dendro, es_heatmap_clo, ncol = 2, widths = c(3, 15)) 
-```
-
-To finalize the plot, we make invisible the remaining non-essential layout elements.
-
-```{r}
-dendro <-
-  dendro +
-  theme(panel.grid = element_blank(),
-        axis.text = element_text(color = 'white'),
-        panel.border = element_rect(fill = NA, color = 'white'))
-
-grid.arrange(dendro, es_heatmap_clo, ncol = 2, widths = c(3, 15)) 
-```
+More details about aligning plots side by side can be found in `aligning_plots.rmd`.
 
 ### Side-by-side heatmaps
 
-One might find it desirable to show a heatmap for both P-values and effect sizes at the same time. This can be done using the `gridExtra` package. When displaying heatmaps side by side, some visual elements will need to be changed and/or rearranged for optimal presentation.
+One might find it desirable to show a heatmap for both P-values and effect sizes at the same time.  When displaying heatmaps side-by-side, some visual elements will need to be changed or rearranged for optimal presentation.
 
 ```{r}
 
-# 90 text and move legend belwow plot
+# 90 degree text and move legend below plot
 multi_heatmap_thm <-
   thm + 
   theme(axis.text.x.top  = element_text(angle = 90),
