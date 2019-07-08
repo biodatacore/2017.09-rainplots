@@ -482,7 +482,7 @@ pv_heatmap_clo <-
   theme(axis.text.y = element_blank())
 ```
 
-```{r}
+```{r, fig.width=15, fig.height=15}
 
 labels <- 
   # Replicate heatmap layout
@@ -554,7 +554,7 @@ dendro <-
 
 ```
 
-```{r}
+```{r, fig.width=15, fig.height=15}
 grid.arrange(dendro, labels, pv_heatmap_clo , es_heatmap_clo ,
              ncol = 4, 
              widths = c(.6, 0.8, 1.5, 1.5))
