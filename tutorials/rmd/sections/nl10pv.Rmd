@@ -8,7 +8,7 @@ output:
 ---
 
 
-Before plotting, we will first transform `p.value` onto the negative-log-scale. This will allow the smallest P-values, which are often of greater interest, to have the largest values when plotted. 
+Before plotting, we will first transform `p.value` onto the negative-log scale. This will allow the smallest P-values, which are often of greater interest, to have the largest values when plotted. 
 
 ```{r}
 plot_data <- 

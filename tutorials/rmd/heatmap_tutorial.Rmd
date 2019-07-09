@@ -11,10 +11,10 @@ output:
 knitr::opts_chunk$set(echo = TRUE, fig.height = 10, fig.width = 10, fig.align = "center")
 ```
 
-```{r data_intro, child = 'tdi4.Rmd'}
+```{r data_intro, child = 'sections/tdi4.Rmd'}
 ```
 
-```{r nl10pv, child = 'nl10pv.Rmd'}
+```{r nl10pv, child = 'sections/nl10pv.Rmd'}
 ```
 
 ## Plotting
@@ -30,7 +30,7 @@ heatmap <-
 heatmap
 ```
 
-This is a good start, but wewant to clean up layout and presentation. We can do this by creating a custom `ggplot2` and adjusting scales. 
+This is a good start, but we want to clean up layout and presentation. We can do this by creating a custom `ggplot2` theme and adjusting scales. 
 
 ```{r}
 
@@ -66,7 +66,7 @@ heatmap
 
 ```
 
-We can further improve the plot by using a 'viridis' colour palette.
+We can further improve the plot by using a 'viridis' color palette.
 
 ```{r}
 
@@ -81,7 +81,7 @@ heatmap
 
 ```
 
-In addition to displaying information about P-values, a heatmap can be used to display information about effect size estimates. For the effect size heatmap, we use a diverging red-blue color palette. In order to guarentee a symmetric palette, we set the limits based on our data.
+A heatmap can also be used to display information about effect size estimates. For the effect size heatmap, we use a diverging red-blue color palette. In order to guarantee a symmetric palette, we set the palette limits based on our data.
 
 ```{r}
 
@@ -101,7 +101,7 @@ palette <-
     '#67001f')
 # Red
 
-# Calculate symetiric limits based on most extreme value
+# Calculate symmetric limits based on most extreme value
 max_abs_estimate <- max(abs(plot_data$estimate))
 
 max_lim <- max_abs_estimate
@@ -209,9 +209,10 @@ es_heatmap_pvo
 
 ```
 
+
 ### Ordering by Cluster
 
-Heatmaps can be ordered by cluster such that similar depdendent variable terms are plotted next to one another. We will be using the `hculst` function to cluster the results by effect size estimate. The `term` variable will be converted into an ordered factor, such that clustered terms are plotted next to one another. In order to cluster the data, we will need to reshape it using the spread function from the `tidyr` package. Once the `term` column has been converted, both P-value and effect size estimate heatmaps will have the same order.
+Heatmaps can be ordered by cluster such that similar dependent variable terms are plotted next to one another. We will be using the `hculst` function to cluster the results by effect size estimate. The `term` variable will be converted into an ordered factor, such that clustered terms are plotted next to one another. In order to cluster the data, we will need to reshape it using the spread function from the `tidyr` package. Once the `term` column has been converted, both P-value and effect size estimate heatmaps will have the same order.
 
 ```{r, warning=FALSE, message=FALSE}
 library(tidyr)
@@ -234,10 +235,12 @@ cluster_data <-
 
 rownames(cluster_data) <- rnms
 
+# Quick peek to see structure of data
 cluster_data[1:5, 1:5]
 ```
 
 ```{r}
+# cluster dependent variable terms
 clust <- hclust(dist(cluster_data), method = 'ward.D2')
 ```
 
@@ -286,9 +289,12 @@ es_heatmap_clo
 
 ```
 
-#### Adding dendrograms
+```{r nl10pv, child = 'sections/sbsp.Rmd'}
+```
 
-Dendrograms can be added to cluster-ordered `ggplot2` plots, but it can be quite complicated. Dendrograms will be created using the `ggdendro` package. 
+### Adding dendrograms
+
+Dendrograms can be added to cluster-ordered `ggplot2` plots using the `ggdendro` package. 
 
 ```{r}
 library(ggdendro)
@@ -304,8 +310,7 @@ A basic dendrogram can be plotted quite easily.
 ```{r}
 dendro <-
   ggplot(dendro_dat) +
-  geom_segment(aes(x = x, y = y, xend=xend, yend=yend), colour = 'black') +
-  theme_dendro()
+  geom_segment(aes(x = x, y = y, xend=xend, yend=yend), colour = 'black') 
 
 dendro
 ```
@@ -315,27 +320,16 @@ The default dendrogram points down. To put the dendrogram on the left of our plo
 ```{r}
 dendro <-
   ggplot(dendro_dat) +
-  geom_segment(aes(x = -y, y = x, xend=-yend, yend=xend), colour = 'black') +
-  theme_dendro()
+  geom_segment(aes(x = -y, y = x, xend=-yend, yend=xend), colour = 'black')
 
 dendro
 ```
 
-We will use the `gridExtra` package to display our plots together. Though our dendrogram looks okay, there will be alignment issues when we first plot the dendrogram and heatmap side by side.
-
-```{r, message=FALSE, warning=FALSE}
-library(gridExtra)
-```
-
-```{r}
-grid.arrange(dendro, es_heatmap_clo, ncol = 2, widths = c(3, 15))
-```
-
-As we can see, the dendrogram is not aligned with the heatmap labels. To get around this, we will use a hack; we will create an empty ggplot with the same scale and layout as the heatmap under the dendrogram. 
+Before plotting our dendrogram and heatmap side-by-side, we need to first create a version of our dendrogram with the same scale and layout as our heatmap.
 
 ```{r}
 
-# Takgin only the column with the longest label maintains alignment while
+# Taking only the column with the longest label maintains alignment while
 # simplifying plot layout
 x_labels <- 
   plot_data_clo$response %>% 
@@ -360,15 +354,19 @@ offset <- max_dendro + 1
 
 ```{r}
 dendro <-
-  # empty ggplot with same x and y axis
+  # Empty ggplot with same layout and scale as heatmap
   ggplot() +
   geom_blank(aes(x = response, y = term), data = longest_x_label_data) + 
+  thm +
+  # 'expand' controls whitespace around the dendrogram. The non-zero argument
+  # may need to be increasesed if the line thickness of the dendrogram is
+  # increased to make sure the entire dendrogram is plotted
+  scale_x_discrete(position = 'top', expand = c(0, 0.02, 0, 0)) +
   # Draw dendrogram
-  geom_segment(aes(x = (-y + offset), y = x, xend=(-yend + offset), yend=xend),
+  geom_segment(aes(x = (-y + offset), y = x, xend = (-yend + offset), yend=xend),
                colour = 'black', 
                data = dendro_dat) +
-  scale_x_discrete(position = 'top', expand = c(0, 0.02, 0, 0)) + 
-  thm +
+  # Mave invisble unnessecary plot layout.
   theme(legend.position = 'none',
         axis.text.y = element_blank(),
         axis.text.x = element_text(colour = 'white'),
@@ -380,7 +378,6 @@ dendro <-
 grid.arrange(dendro, es_heatmap_clo, ncol = 2, widths = c(3, 15)) 
 ```
 
-More details about aligning plots side by side can be found in `aligning_plots.rmd`.
 
 ### Side-by-side heatmaps
 
@@ -395,19 +392,19 @@ multi_heatmap_thm <-
         legend.position = 'bottom') 
 
 # Put legend title on top of bar
-cbg <-  guides(fill = guide_colorbar(title.position = 'top', barwidth = 15))
+gcb <-  guides(fill = guide_colorbar(title.position = 'top', barwidth = 15))
 
 pv_heatmap_clo <-
   pv_heatmap_clo +
   multi_heatmap_thm +
-  cbg +
+  gcb +
   # Can only use regular text for legend title
   scale_fill_viridis_c('Negative Log10 P-value')
 
 es_heatmap_clo <-
   es_heatmap_clo +
   multi_heatmap_thm +
-  cbg
+  gcb
 
 grid.arrange(pv_heatmap_clo, es_heatmap_clo, ncol = 2)
 
@@ -426,7 +423,7 @@ es_heatmap_clo <-
 grid.arrange(pv_heatmap_clo, es_heatmap_clo, ncol = 2)
 ```
 
-One solution is to create three different plots. Two heatmaps without y-axis labels, and one plot of text that will serve as the labels. This process is similar to that of adding a dendrograms to a plot. We will create an empty ggplot with the same scale and layout as the heatmaps to align the y-axis labels and heatmaps when they are plotted adjacent to one another.  
+One solution is to create three different plots. Two heatmaps without y-axis labels, and one plot of text that will serve as the labels. 
 
 ```{r}
 pv_heatmap_clo <-
@@ -463,15 +460,14 @@ labels <-
 
 grid.arrange(labels, pv_heatmap_clo , es_heatmap_clo , 
              ncol = 3, 
-             widths = c(1.3, 3, 3), # Best may take some trial and error
+             widths = c(1.3, 3, 3), # Best values may take some trial and error
              padding = unit(0, 'line')) # Shift plots closer together
 ```
 
 
 #### Adding dendrograms
 
-To add a dendrogram to side-by-side heatmaps with one set of y-axis labels, we will employ the strategy we have used whenever we want to align adjacent plots; match the heatmap layout and then make it invisible to align and display the dendrogram.
-
+We can add a dendrogram to the left of side by side heatmaps with one set of Y-axis labels
 
 ```{r}
 
@@ -483,13 +479,12 @@ dendro <-
              colour = NA,
              data = longest_x_label_data) +
   multi_heatmap_thm +
-  scale_x_discrete(position = 'top', expand = c(1, 0, 0, 0)) +
-  
+  scale_x_discrete(position = 'top', expand = c(0, 0.2, 0, 0)) +
   # Force color bar to be drawn to match layout
-  geom_segment(aes(x = -y + offset, y = x, xend= -yend + offset, yend=xend, color = x),
+  geom_segment(aes(x = -y + offset, y = x, xend = -yend + offset, yend = xend, color = x),
                data = dendro_dat) +
   # draw black dendrogram on top
-  geom_segment(aes(x = -y + offset, y = x, xend= -yend + offset, yend=xend),
+  geom_segment(aes(x = -y + offset, y = x, xend = -yend + offset, yend = xend),
                colour = 'black', 
                data = dendro_dat) +
   # Make invisible the unnessecary plot layout
