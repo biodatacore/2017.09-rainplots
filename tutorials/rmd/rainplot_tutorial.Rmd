@@ -1,7 +1,7 @@
 ---
-title: "Rainplots Tutorial"
+title: "Plotting Rainplots"
 author: "Mir Henglin"
-date: "June 25, 2019"
+date: "July 09, 2019"
 output:
   html_document: default
   pdf_document: default
@@ -11,10 +11,10 @@ output:
 knitr::opts_chunk$set(echo = TRUE, fig.height = 10, fig.width = 10, fig.align = "center")
 ```
 
-```{r data_intro, child = 'tdi4.Rmd'}
+```{r data_intro, child = 'sections/tdi4.Rmd'}
 ```
 
-```{r nl10pv, child = 'nl10pv.Rmd'}
+```{r nl10pv, child = 'sections/nl10pv.Rmd'}
 ```
 
 ## Plotting
@@ -30,8 +30,7 @@ rainplot <-
 rainplot
 ```
 
-
-This is a good start, but we will want to clean up the visual presentation. We can do this by creating a custom `ggplot2` theme and adjusting legend titles. One thing to ensure is to represent P-values (the size of the plotted points) by area instead of radius. When comparing two points of different size, humans perceive the area of points, not their radius, when comparing them. Thus a value that is twice another should have twice as much area, not double the radius. This is ensured by using `scale_size_area`.
+This is a good start, but we want to clean up layout and presentation. We can do this by creating a custom `ggplot2` theme and adjusting scales and layout. One thing to ensure is to represent P-values (the size of the plotted points) by area instead of radius. When comparing two points of different size, humans perceive the area of points, not their radius, when comparing them. Thus a value that is twice another should have twice as much area, not double the radius. This is ensured by using `scale_size_area`.
 
 ```{r}
 
@@ -45,7 +44,7 @@ thm <-
     axis.title.y = element_blank(),
     axis.ticks.y = element_blank(),
     
-    # Remove Gridlines and boxes
+    # Remove gridlines and boxes
     panel.grid.major = element_blank(),
     panel.grid.minor = element_blank(),
     axis.line = element_blank(),
@@ -63,20 +62,22 @@ thm <-
 rainplot <- 
   rainplot + 
   thm + 
+  # Move x-axis label to top of plot
   scale_x_discrete(position = 'top') +
   scale_size_area(expression(paste(-log[10]('P-value')))) + 
-  scale_color_continuous('Regression Estimate')
+  scale_color_continuous('Effect Size Estimate')
 
 rainplot
 
 
 ```
 
-To make the presentation of the regression estimates clearer, we create a diverging color scale, and set positive and negative limits equidistant from 0.
+To make the presentation of the effect size estimates clearer, we we use a diverging red-blue palette. In order to guarantee a symmetric palette, we set the palette limits based on our data.
 
 ```{r}
 
 palette <-
+  # Blue
   c("#053061",
     "#313695",
     "#4575b4",
@@ -89,15 +90,20 @@ palette <-
     "#d73027",
     "#a50026",
     '#67001f')
+# Red
 
+# Calculate symmetric limits based on most extreme value
 max_abs_estimate <- max(abs(plot_data$estimate))
 
 max_lim <- max_abs_estimate
 min_lim = -1 * max_lim
 
+```
+
+```{r}
 rainplot <- rainplot +
   scale_color_gradientn(
-    'Regression Estimate',
+    'Effect Size Estimate',
     colors = palette,
     limits = c(min_lim, max_lim),
     breaks = c(min_lim,  min_lim / 2, 0 , max_lim/2, max_lim)
@@ -119,7 +125,8 @@ rainplot +
 
 ### Outlines
 
-The points on rainplots can be outlined in a color different from the color of the point. To get such a shape, we add the argument `shape = 21` to `geom_point`. Note that when we do this, the color of the point changes from `color` to `fill`.
+The points on rainplots can be outlined in a color different from the color of the point. To get such a shape, we add the argument `shape = 21` to `geom_point`. Note that when we do this, the color of the point changes from `color` to `fill`. Here, we leave the outlines as the default black. 
+
 ```{r}
 
 rainplot <-
@@ -127,7 +134,7 @@ rainplot <-
   geom_point(aes(x = response, y = term, fill = estimate, size = p.value), 
              shape = 21) + 
   scale_fill_gradientn(
-    'Regression Estimate',
+    'Effect Size Estimate',
     colors = palette,
     limits = c(min_lim, max_lim),
     breaks = c(min_lim, min_lim / 2, 0 , max_lim / 2, max_lim)
@@ -139,10 +146,9 @@ rainplot <-
 rainplot
 ```
 
-
 ### P-value Thresholding
 
-When a few `p.values` are much smaller than the majority of the data the plot loses size resolution in the range where most of the data lies. One possible solution is to set all P-values above some ceiling, here chosen to be 15, to the value of the ceiling. The threshold can be set at a level where one considers all P-values more extreme than the threshold to be 'of interest'.
+When a few P-values are much smaller than the majority of the data, a rainplot loses size resolution in the range where most of the data lies. One possible solution is to set all P-values above some ceiling, here chosen to be 15, to the value of the ceiling. The threshold can be set at a level where one considers all P-values more extreme than the threshold to be 'of interest'.
 
 ```{r}
 
@@ -151,50 +157,59 @@ plot_data_thresholded <-
   mutate(p.value = ifelse(p.value > 15, 15, p.value))
 
 rainplot <-
+  # Use the thresholded data
   ggplot(plot_data_thresholded) +
   geom_point(aes(x = response, y = term, colour = estimate, size = p.value)) +
+  scale_x_discrete(position = 'top') +
   scale_color_gradientn(
-    'Regression Estimate',
+    'Effect Size Estimate',
     colors = palette,
     limits = c(min_lim, max_lim),
     breaks = c(min_lim, min_lim / 2, 0 , max_lim / 2, max_lim)
   ) +
+  # Set the legend breaks and labels to account for the thresholding
   scale_size_area(
     expression(paste(-log[10]('P-value'))), 
     max_size = 12,
     breaks = c(5, 10, 15), 
     labels = c('5', '10', '>=15')) +
-  scale_x_discrete(position = 'top') +
   thm
 
 rainplot
 ```
 
+
 ### Ordering by P-Value
 
-To make it easier to identify the metabolites that had small P-values in multiple models, we will convert the `term` variable into a factor variable ordered by the average P-value across all models. This will put metabolites with small P-values in multiples models at the top of the plot, and metabolites with large P-values in multiple models at the bottom of the plot.
+To make it easier to identify the metabolites that had small P-values in multiple models, we will convert the `term` column into an 'ordered factor' ordered by the average P-value across all models. This will put metabolites with small P-values in multiples models at the top of the plot, and metabolites with large P-values in multiple models at the bottom of the plot.
 
 ```{r}
-# Order metabolites by average p-value
-term_order <-
+
+# Calculate mean P-value for each metabolite
+mpv <-
   plot_data %>% 
   group_by(term) %>% 
-  summarise(mpv = mean(p.value)) %>% 
-  arrange(mpv) %>% 
+  summarise(mean_pv = mean(p.value))
+
+# Order metabolites by average p-value
+term_order <-
+  mpv %>% 
+  arrange(mean_pv) %>% 
   pull(term)
 
 # Convert term to a factor, ordered by `term_order`
-plot_data <- 
+plot_data_pvo <- 
   plot_data %>% 
   mutate(term = factor(term, levels = term_order))
 ```
 
 ```{r}
 rainplot <-
-  ggplot(plot_data) +
+  # Use the data with the term column ordered by mean P-value
+  ggplot(plot_data_pvo) +
   geom_point(aes(x = response, y = term, colour = estimate, size = p.value)) +
   scale_color_gradientn(
-    'Regression Estimate',
+    'Effect Size Estimate',
     colors = palette,
     limits = c(min_lim, max_lim),
     breaks = c(min_lim, min_lim / 2, 0 , max_lim / 2, max_lim)
@@ -208,14 +223,14 @@ rainplot
 
 ### Ordering by Cluster
 
-Rainplots can be clustered like heatmaps. We will be using the `hculst` function to cluster the results by regression estimate. The `term` variable will be converted into an ordered factor, just as was done in `Ordering by P-Value`. In order to cluster the data, we will need to reshape it using the spread function from the `tidyr` package.
+rainplots can be ordered by cluster such that similar dependent variable terms are plotted next to one another. We will be using the `hculst` function to cluster the results by effect size estimate. The `term` variable will be converted into an ordered factor, such that clustered terms are plotted next to one another. In order to cluster the data, we will need to reshape it using the spread function from the `tidyr` package. 
 
 ```{r, warning=FALSE, message=FALSE}
 library(tidyr)
 ```
 
 ```{r}
-# Convert to matrix for clustering. `term` on the y-axis, `response` on the x-axis
+# Convert to matrix and reshape for clustering.
 cluster_data <-
   plot_data %>% 
   select(response, term, estimate) %>% 
@@ -231,13 +246,14 @@ cluster_data <-
 
 rownames(cluster_data) <- rnms
 
+# Quick peek to see structure of data
 cluster_data[1:5, 1:5]
 ```
 
 ```{r}
+# cluster dependent variable terms
 clust <- hclust(dist(cluster_data), method = 'ward.D2')
 ```
-
 
 ```{r}
 
@@ -246,17 +262,18 @@ term_order <-
   clust$labels[clust$order]
 
 # Convert term to a factor, ordered by `term_order`
-plot_data <- 
+plot_data_clo <- 
   plot_data %>% 
   mutate(term = factor(term, levels = term_order))
 ```
 
 ```{r}
 rainplot <-
-  ggplot(plot_data) +
+  # Use cluter ordered data
+  ggplot(plot_data_clo) +
   geom_point(aes(x = response, y = term, colour = estimate, size = p.value)) +
   scale_color_gradientn(
-    'Regression Estimate',
+    'Effect Size Estimate',
     colors = palette,
     limits = c(min_lim, max_lim),
     breaks = c(min_lim, min_lim / 2, 0 , max_lim / 2, max_lim)
@@ -268,9 +285,12 @@ rainplot <-
 rainplot
 ```
 
-#### Adding dendrograms
+```{r nl10pv, child = 'sections/sbsp.Rmd'}
+```
 
-Dendrograms can be added to `ggplot2` plots, but it can be quite complicated. If one wants to add dendrograms to a clustered rainplot, there will be some trial and error to get everything properly aligned. Dendrograms will be created using the `ggdendro` package. 
+### Adding dendrograms
+
+Dendrograms can be added to cluster-ordered `ggplot2` plots using the `ggdendro` package. 
 
 ```{r}
 library(ggdendro)
@@ -281,149 +301,81 @@ library(ggdendro)
 dendro_dat <- segment(dendro_data(clust))
 ```
 
-```{r}
-# basic dendrogram
-
-dendro <-
-  ggplot(dendro_dat) +
-  geom_segment(aes(x = x, y = y, xend=xend, yend=yend), colour = 'black') +
-  theme_dendro()
-
-dendro
-```
-
-The default dendrogram points down. To put the dendrogram on the left of our rain plot, we want it to point to the right. We can do this by switching the x and y coordinates.
+A basic dendrogram can be plotted quite easily.
 
 ```{r}
 dendro <-
   ggplot(dendro_dat) +
-  geom_segment(aes(x = -y, y = x, xend=-yend, yend=xend), colour = 'black') +
-  theme_dendro()
+  geom_segment(aes(x = x, y = y, xend=xend, yend=yend), colour = 'black') 
 
 dendro
 ```
 
-We will use the `gridExtra` package to display our plots together. Though our dendrogram looks okay, there will be alignment issues when we first plot the dendrogram and rainplot side by side.
-
-```{r, message=FALSE, warning=FALSE}
-library(gridExtra)
-```
+The default dendrogram points down. To put the dendrogram on the left of our plot, we want it to point to the right. We can do this by switching the x and y coordinates.
 
 ```{r}
-grid.arrange(dendro, rainplot, ncol = 2, widths = c(3, 15))
+dendro <-
+  ggplot(dendro_dat) +
+  geom_segment(aes(x = -y, y = x, xend=-yend, yend=xend), colour = 'black')
+
+dendro
 ```
 
-As we can see, the dendrogram is not aligned with the rainplot labels. To get around this, we will use a hack. First, we will plot a modified version of the rainplot, selecting only the column with the longest label, under the dendrogram. This will align the plot area between the dendrogram and the rainplot. Second, we will make the modified rainplot invisible, so that the dendrogram appears on its own.
+Before plotting our dendrogram and rainplot side-by-side, we need to first create a version of our dendrogram with the same scale and layout as our rainplot
 
 ```{r}
 
+# Taking only the column with the longest label maintains alignment while
+# simplifying plot layout
 x_labels <- 
-  plot_data$response %>% 
+  plot_data_clo$response %>% 
   unique()
 
 longest_x_label <-
   x_labels[[which.max(nchar(x_labels))]]
 
-
-modified_rainplot_data <-
+longest_x_label_data <-
   plot_data %>% 
   filter(response == longest_x_label)
 
+```
+
+```{r}
+# Align the top of the dendrogram with the x-axis label
+max_dendro <-
+  max(abs(c(dendro_dat$y, dendro_dat$yend)))
+
+offset <- max_dendro + 1
+```
+
+
+```{r}
+
 dendro <-
+  # Empty ggplot with same layout and scale as rainplot
   ggplot() +
-  # One-column rainplot. White Points to be invisible.
-  geom_point(aes(x = response, y = term, size = p.value),
-             colour = 'white',  
-             data = modified_rainplot_data) +
-  scale_x_discrete(position = 'top', expand = c(0, 3, 0, 0.1)) + 
+  geom_blank(aes(x = response, y = term), data = longest_x_label_data) + 
   thm +
-  # Make rainplot invisible. Remove elements that don't affect alignemnt Make
-  # invisible (match background) elemnts that do affect alignment.
+  # 'expand' controls whitespace around the dendrogram. The non-zero argument
+  # may need to be increasesed if the line thickness of the dendrogram is
+  # increased to make sure the entire dendrogram is plotted
+  scale_x_discrete(position = 'top', expand = c(0, 0.02, 0, 0)) +
+  # Draw dendrogram
+  geom_segment(aes(x = (-y + offset), y = x, xend = (-yend + offset), yend=xend),
+               colour = 'black', 
+               data = dendro_dat) +
+  # Mave invisble unnessecary plot layout.
   theme(legend.position = 'none',
         axis.text.y = element_blank(),
         axis.text.x = element_text(colour = 'white'),
+        panel.grid = element_blank(),
         panel.border = element_rect(fill = NA, colour = 'white')
-        
-  )  + 
-  # Draw dendrogram
-  geom_segment(aes(x = (-y + 1), y = x, xend=(-yend + 1), yend=xend),
-               colour = 'black', 
-               data = dendro_dat)
+  )  
+
 
 
 grid.arrange(dendro, rainplot, ncol = 2, widths = c(3, 15)) 
 ```
 
-
-To better understand how this works, lets walk through it step by step. To make what is going on clearer, many plot elements will initially be left visible. We start by plotting the modified rainplot next to the full rainplot.
-
-```{r}
-x_labels <- 
-  plot_data$response %>% 
-  unique()
-
-longest_x_label <-
-  x_labels[[which.max(nchar(x_labels))]]
-
-modified_rainplot_data <-
-  plot_data %>% 
-  filter(response == longest_x_label)
-
-dendro <-
-  ggplot() +
-  # One-column rainplot.
-  geom_point(aes(x = response, y = term, size = p.value), 
-             colour = 'black', 
-             data = modified_rainplot_data) +
-  scale_x_discrete(position = 'top') + 
-  thm +
-  # Remove legend and y axis text
-  theme(legend.position = 'none',
-        axis.text.y = element_blank()
-        
-  )
-
-grid.arrange(dendro, rainplot, ncol = 2, widths = c(3, 15)) 
-```
-
-Looking at the plots side by side, we see that the plot areas are aligned. This will help align the dendrogram to the labels.
-
-```{r}
-
-# The `+ 1` aligns the tips of the dendrograms to the plot points. This will be
-# important when eliminating white space.
-dendro <-
-  dendro + 
-  geom_segment(aes(x = (-y + 1), y = x, xend=(-yend + 1), yend=xend),
-               colour = 'black', 
-               data = dendro_dat)
-
-grid.arrange(dendro, rainplot, ncol = 2, widths = c(3, 15)) 
-```
-
-When we add the dendrogram, we see that it is perfectly aligned to the rainplot labels. However, some of the dendrogram is outside the plotted area to the left. Additionally, there is too much white space to the right of the plot. Both those issues can be rectified through the `expand` argument. The first non-zero argument to `expand` controls the space to the left of the plot, and needs to be large enough so that the whole dendrogram is visible. The best value may take some trial and error to discover. The second non-zero argument determines how close the right plot edge is to the bottom of the dendrogram. I have found 0.1 to be a good default, but it can be larger if more space between the dendrogram and rainplot is desired..
-
-```{r}
-
-dendro <-
-  dendro +
-  scale_x_discrete(position = 'top', expand = c(0, 3, 0, 0.1))
-
-grid.arrange(dendro, rainplot, ncol = 2, widths = c(3, 15)) 
-```
-
-To finalize the plot, we make invisible the remaining visual elements not a part of the dendrogram.
-
-```{r}
-dendro <-
-  dendro +
-  geom_point(aes(x = response, y = term, size = p.value), 
-             colour = 'white',  
-             data = modified_rainplot_data) +
-  theme(axis.text = element_text(color = 'white'),
-        panel.border = element_rect(fill = NA, color = 'white'))
-
-grid.arrange(dendro, rainplot, ncol = 2, widths = c(3, 15)) 
-```
 
 
