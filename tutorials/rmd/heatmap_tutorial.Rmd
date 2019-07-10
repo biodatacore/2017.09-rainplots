@@ -1,10 +1,10 @@
 ---
-title: "Heatmaps Tutorial"
+title: "Plotting Heatmaps"
 author: "Mir Henglin"
-date: "June 25, 2019"
+date: "July 09, 2019"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -30,7 +30,7 @@ heatmap <-
 heatmap
 ```
 
-This is a good start, but we want to clean up layout and presentation. We can do this by creating a custom `ggplot2` theme and adjusting scales. 
+This is a good start, but we want to clean up layout and presentation. We can do this by creating a custom `ggplot2` theme and adjusting scales and layout. 
 
 ```{r}
 
@@ -81,7 +81,7 @@ heatmap
 
 ```
 
-A heatmap can also be used to display information about effect size estimates. For the effect size heatmap, we use a diverging red-blue color palette. In order to guarantee a symmetric palette, we set the palette limits based on our data.
+A heatmap can also be used to display information about effect size estimates. For the effect size heatmap, we use a diverging red-blue palette. In order to guarantee a symmetric palette, we set the palette limits based on our data.
 
 ```{r}
 
