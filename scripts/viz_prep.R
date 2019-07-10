@@ -41,6 +41,24 @@ model_results$control %<>%
     map_chr(str_c, collapse = ' + ')
 
 
+
+# Metabolite Renaming -----------------------------------------------------
+
+n_mets <-
+    n_distinct(model_results$term)
+
+n_digits <- nchar(n_mets)
+
+ns <-
+    1:n_mets %>%
+    stringr::str_pad(width = n_digits, side = 'left', pad = '0')
+
+new_ids <-
+    paste0('metabolite_', ns) %>%
+    set_names(unique(model_results$term))
+
+model_results$term <- new_ids[model_results$term]
+
 # P-value Ranking ---------------------------------------------------------
 
 mzid_rank <-
@@ -61,9 +79,28 @@ saveRDS(model_results, 'data/plot_data.rds')
 
 model_results <- model_results %>% filter(rank %in% seq(1, 121, 6))
 
+# Metabolite Renaming
+
+n_mets <-
+    n_distinct(model_results$term)
+
+n_digits <- nchar(n_mets)
+
+ns <-
+    1:n_mets %>%
+    stringr::str_pad(width = n_digits, side = 'left', pad = '0')
+
+new_ids <-
+    paste0('Metabolite ', ns) %>%
+    set_names(sample(unique(model_results$term)))
+
+model_results$term <- new_ids[model_results$term]
+
+# Simplyfying format
 model_results <-
     model_results %>%
     select(response, term, estimate, p.value) %>%
     mutate(estimate = round(estimate, 1))
+
 
 saveRDS(model_results, 'data/tutorial_plot_data.rds')
